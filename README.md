@@ -1,8 +1,6 @@
-# Welcome to your CDK TypeScript project
+# Turnip React Infra
 
-This is a blank project for CDK development with TypeScript.
-
-The `cdk.json` file tells the CDK Toolkit how to execute your app.
+Infrastructure definition for Turnip React.
 
 ## Useful commands
 
