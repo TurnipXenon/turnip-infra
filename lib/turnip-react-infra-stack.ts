@@ -1,16 +1,12 @@
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
+import {aws_ecr} from "aws-cdk-lib";
 // import * as sqs from 'aws-cdk-lib/aws-sqs';
 
 export class TurnipReactInfraStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    // The code that defines your stack goes here
-
-    // example resource
-    // const queue = new sqs.Queue(this, 'TurnipReactInfraQueue', {
-    //   visibilityTimeout: cdk.Duration.seconds(300)
-    // });
+    const repository = new aws_ecr.Repository(this, 'turnip-react');
   }
 }
