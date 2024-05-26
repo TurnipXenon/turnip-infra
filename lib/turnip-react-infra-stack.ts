@@ -26,5 +26,7 @@ export class TurnipReactInfraStack extends cdk.Stack {
             owner: "TurnipXenon",
             repo: "turnip-react",
         });
+
+        repository.grantPush(logicGithubActionRole);
     }
 }
