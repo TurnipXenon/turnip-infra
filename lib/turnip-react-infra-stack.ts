@@ -1,7 +1,6 @@
 import * as cdk from 'aws-cdk-lib';
-import {aws_ecr, aws_iam} from 'aws-cdk-lib';
+import {aws_ecr} from 'aws-cdk-lib';
 import {Construct} from 'constructs';
-import {ServicePrincipal} from "aws-cdk-lib/aws-iam";
 import {GithubActionsIdentityProvider, GithubActionsRole} from "aws-cdk-github-oidc";
 
 export class TurnipReactInfraStack extends cdk.Stack {
@@ -16,10 +15,16 @@ export class TurnipReactInfraStack extends cdk.Stack {
         // https://constructs.dev/packages/aws-cdk-github-oidc/v/2.4.1?lang=typescript
         const provider = new GithubActionsIdentityProvider(this, "GithubProvider");
 
-        const uploadRole = new GithubActionsRole(this, "CDKGithubActionRole", {
+        const infraGithubActionRole = new GithubActionsRole(this, "CDKGithubActionRole", {
             provider: provider,
             owner: "TurnipXenon",
             repo: "turnip-react-infra",
+        });
+
+        const logicGithubActionRole = new GithubActionsRole(this, "CDKGithubActionRole", {
+            provider: provider,
+            owner: "TurnipXenon",
+            repo: "turnip-react",
         });
     }
 }
