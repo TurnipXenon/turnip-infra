@@ -11,7 +11,8 @@
     "cdk": "cdk",
     "deploy": "npx cdk deploy",
     "diff": "npx cdk diff",
-    "synth": "npx cdk synth"
+    "synth": "npx cdk synth",
+    "to-dev": "git checkout main && git pull origin main && git branch -d turnip/dev && git checkout -b turnip/dev"
   },
   "devDependencies": {
     "@types/jest": "^29.5.12",
