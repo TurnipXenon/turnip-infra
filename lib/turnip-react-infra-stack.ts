@@ -21,7 +21,7 @@ export class TurnipReactInfraStack extends cdk.Stack {
             repo: "turnip-react-infra",
         });
 
-        const logicGithubActionRole = new GithubActionsRole(this, "CDKGithubActionRole", {
+        const logicGithubActionRole = new GithubActionsRole(this, "LogicGithubActionRole", {
             provider: provider,
             owner: "TurnipXenon",
             repo: "turnip-react",
