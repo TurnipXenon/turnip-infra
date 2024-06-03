@@ -1,7 +1,8 @@
 import * as cdk from 'aws-cdk-lib';
-import {aws_ecr} from 'aws-cdk-lib';
+import {aws_ecr, aws_route53, aws_certificatemanager as acm} from 'aws-cdk-lib';
 import {Construct} from 'constructs';
 import {GithubActionsIdentityProvider, GithubActionsRole} from "aws-cdk-github-oidc";
+import {AlbToFargate, AlbToFargateProps} from "@aws-solutions-constructs/aws-alb-fargate";
 
 export class TurnipReactInfraStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -28,5 +29,31 @@ export class TurnipReactInfraStack extends cdk.Stack {
         });
 
         repository.grantPush(logicGithubActionRole);
+
+        // todo: organize better
+        // ecs
+        // https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_route53-readme.html#amazon-route53-construct-library
+        const domain = 'react.turnipxenon.com';
+        const hostedZone = new aws_route53.PublicHostedZone(this, 'HostedZone', {
+            zoneName: domain,
+        });
+
+        // https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_certificatemanager.Certificate.html#example
+        const cert = new acm.Certificate(this, "Certificate", {
+            domainName: domain,
+            validation: acm.CertificateValidation.fromDns(hostedZone)
+        });
+
+        // https://constructs.dev/packages/@aws-solutions-constructs/aws-alb-fargate/v/2.58.1?lang=typescript
+        const albToFargateProps: AlbToFargateProps = {
+            ecrRepositoryArn: repository.repositoryArn,
+            ecrImageVersion: "latest",
+            listenerProps: {
+                certificates: [cert]
+            },
+            publicApi: true
+        };
+
+        new AlbToFargate(this, 'AlbFargateConstruct', albToFargateProps);
     }
 }
