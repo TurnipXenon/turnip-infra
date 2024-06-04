@@ -1,13 +1,18 @@
 import * as cdk from 'aws-cdk-lib';
-import {aws_certificatemanager as acm, aws_ecr, aws_ecs as ecs, aws_route53} from 'aws-cdk-lib';
+import {aws_certificatemanager as acm, aws_ecr, aws_route53} from 'aws-cdk-lib';
 import {Construct} from 'constructs';
 import {GithubActionsIdentityProvider, GithubActionsRole} from "aws-cdk-github-oidc";
-import * as solutions_defaults from "@aws-solutions-constructs/core";
-import {AlbToFargate, AlbToFargateProps} from "@aws-solutions-constructs/aws-alb-fargate";
-import {FargateServiceProps} from "aws-cdk-lib/aws-ecs";
+import {AlbToFargate, AlbToFargateProps} from "./constructs/aws-alb-fargate";
 
 export class TurnipReactInfraStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+        if (!props) {
+            props = {
+                // this is usually us-west-2
+                env: {region: process.env.CDK_DEFAULT_REGION}
+            };
+        }
+
         super(scope, id, props);
 
         const repository = new aws_ecr.Repository(this, 'turnip-react');
@@ -46,46 +51,16 @@ export class TurnipReactInfraStack extends cdk.Stack {
             validation: acm.CertificateValidation.fromDns(hostedZone)
         });
 
-        // https://github.com/awslabs/aws-solutions-constructs/blob/main/source/patterns/%40aws-solutions-constructs/aws-alb-fargate/lib/index.ts
-        const vpc = solutions_defaults.buildVpc(this, {
-            existingVpc: undefined,
-            defaultVpcProps: solutions_defaults.DefaultPublicPrivateVpcProps(),
-            constructVpcProps: {enableDnsHostnames: true, enableDnsSupport: true}
-        });
-
-        // todo: now make the fargateserviceprops functioning!
-        const cluster = new ecs.Cluster(this, 'EcsCluster', {vpc});
-
-        const taskDefinition = new ecs.FargateTaskDefinition(this, 'TurnipReact');
-        taskDefinition.addContainer('TurnipReactWeb', {
-            image: ecs.ContainerImage.fromEcrRepository(repository, "latest")
-        });
-
-        // https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_ecs_patterns-readme.html#set-capacityproviderstrategies-for-applicationloadbalancedfargateservice
-        const fargateServiceProps: FargateServiceProps = {
-            cluster,
-            taskDefinition,
-            capacityProviderStrategies: [
-                {
-                    capacityProvider: 'FARGATE_SPOT',
-                    weight: 1,
-                    base: 1
-                }
-            ]
-        };
-
         // https://constructs.dev/packages/@aws-solutions-constructs/aws-alb-fargate/v/2.58.1?lang=typescript
-        // todo: cluster
-        // todo: vpc
         const albToFargateProps: AlbToFargateProps = {
-            existingVpc: vpc,
             ecrRepositoryArn: repository.repositoryArn,
             ecrImageVersion: "latest",
             listenerProps: {
                 certificates: [cert]
             },
             publicApi: true,
-            fargateServiceProps
+            logAlbAccessLogs: false, // todo: move to cloudwatch?
+            repository
         };
 
         new AlbToFargate(this, 'AlbFargateConstruct', albToFargateProps);
