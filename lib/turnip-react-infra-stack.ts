@@ -1,9 +1,9 @@
 import * as cdk from 'aws-cdk-lib';
-import {aws_certificatemanager as acm, aws_ecr, aws_route53} from 'aws-cdk-lib';
+import {aws_ecr} from 'aws-cdk-lib';
 import {Construct} from 'constructs';
 import {GithubActionsIdentityProvider, GithubActionsRole} from "aws-cdk-github-oidc";
-import {AlbToFargateProps} from "./constructs/aws-alb-fargate";
 import {AlbFargate} from "./constructs/alb-fargate";
+import {Role, ServicePrincipal} from "aws-cdk-lib/aws-iam";
 
 export class TurnipReactInfraStack extends cdk.Stack {
     public readonly loadBalancedFargateService: AlbFargate;
@@ -41,7 +41,7 @@ export class TurnipReactInfraStack extends cdk.Stack {
         repository.grantPush(logicGithubActionRole);
 
         // todo: organize better
-        // ecs
+        // todo: add route53 to connect to the alb
         // https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_route53-readme.html#amazon-route53-construct-library
         // const domain = 'react.turnipxenon.com';
         // const hostedZone = new aws_route53.PublicHostedZone(this, 'HostedZone', {
@@ -66,10 +66,18 @@ export class TurnipReactInfraStack extends cdk.Stack {
         //     repository
         // };
 
+        // to be used for all ECS Fargate services to connect with a repository in ECR
+        const taskExecutionRole = new Role(this, 'ECSFargateExecutionRole', {
+            assumedBy: new ServicePrincipal("ecs-tasks.amazonaws.com")
+        });
+        repository.grantRead(taskExecutionRole);
+        repository.grantPull(taskExecutionRole);
+
         // todo https://www.reddit.com/r/aws/comments/11g98us/aws_noob_cdkarchitecture_question_for_node_backend/
         // todo: also move from porkbun to r53 as authortitative
         this.loadBalancedFargateService = new AlbFargate(this, 'TurnipReact', {
-            repository
+            repository,
+            taskExecutionRole
         });
     }
 }

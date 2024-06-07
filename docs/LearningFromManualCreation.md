@@ -1,0 +1,21 @@
+- We created an ECS cluster: TestCluster
+- We created a Task definition: TestTask
+  - For image, our exposed port is 3000 - TCP - HTTP
+  - 0.5 vcpu 2GB task size
+  - resource limit
+    - CPU: 1 GB
+    - Memory hard limit: 3 GB
+    - Memory soft limit: 1 GB
+    - Note we can add environment variables on the task, this will be useful later for DynamoDB
+    - We could also use an environment file hosted on S3. That's cool
+    - We can turn on log collection here
+  - Next, we go to our cluster to create a service: TestService
+    - Compute options: launch type / fargate / latest
+    - An alternative was capacity provider strategy
+      - Fargate / Base 0 / Weight 1 / platform version latest
+    - Application type: Service
+      - Family: TestTask
+  - Oh I forgot to make a Task, which is different from TaskDefinition lmao
+  - Trying AWS CloudMap for Service discovery: react.turnipxenon.com
+    - It may enable us to have our service to be discoverable by DNS
+  - All this time.... AWS blocked my account that's why none of my CDK attempts were working lol
