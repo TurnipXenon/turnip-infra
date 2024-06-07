@@ -1,5 +1,5 @@
 import * as cdk from 'aws-cdk-lib';
-import {aws_ecr} from 'aws-cdk-lib';
+import {aws_certificatemanager as acm, aws_ecr, aws_route53, RemovalPolicy} from 'aws-cdk-lib';
 import {Construct} from 'constructs';
 import {GithubActionsIdentityProvider, GithubActionsRole} from "aws-cdk-github-oidc";
 import {AlbFargate} from "./constructs/alb-fargate";
@@ -43,28 +43,17 @@ export class TurnipReactInfraStack extends cdk.Stack {
         // todo: organize better
         // todo: add route53 to connect to the alb
         // https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_route53-readme.html#amazon-route53-construct-library
-        // const domain = 'react.turnipxenon.com';
-        // const hostedZone = new aws_route53.PublicHostedZone(this, 'HostedZone', {
-        //     zoneName: domain,
-        // });
+        const domain = 'turnipxenon.com';
+        const hostedZone = new aws_route53.PublicHostedZone(this, 'TurnipXenonHostedZone', {
+            zoneName: domain,
+        });
+        hostedZone.applyRemovalPolicy(RemovalPolicy.RETAIN);
 
         // https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_certificatemanager.Certificate.html#example
-        // const cert = new acm.Certificate(this, "Certificate", {
-        //     domainName: domain,
-        //     validation: acm.CertificateValidation.fromDns(hostedZone)
-        // });
-
-        // https://constructs.dev/packages/@aws-solutions-constructs/aws-alb-fargate/v/2.58.1?lang=typescript
-        // const albToFargateProps: AlbToFargateProps = {
-        //     ecrRepositoryArn: repository.repositoryArn,
-        //     ecrImageVersion: "latest",
-        //     listenerProps: {
-        //         certificates: [cert]
-        //     },
-        //     publicApi: true,
-        //     logAlbAccessLogs: false, // todo: move to cloudwatch?
-        //     repository
-        // };
+        const certificate = new acm.Certificate(this, "Certificate", {
+            domainName: domain,
+            validation: acm.CertificateValidation.fromDns(hostedZone)
+        });
 
         // to be used for all ECS Fargate services to connect with a repository in ECR
         const taskExecutionRole = new Role(this, 'ECSFargateExecutionRole', {
@@ -77,7 +66,12 @@ export class TurnipReactInfraStack extends cdk.Stack {
         // todo: also move from porkbun to r53 as authortitative
         this.loadBalancedFargateService = new AlbFargate(this, 'TurnipReact', {
             repository,
-            taskExecutionRole
+            taskExecutionRole,
+            hostedZone,
+            domain,
+            certificate
         });
+
+        // todo: albfarate target group configure health check
     }
 }
