@@ -16,7 +16,7 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCESS_KEY_ID }}:role/TurnipReactInfraStack-CDKGithubActionRoleB8896D7A-fc37CpSiGtnC
+          role-to-assume: arn:aws:iam::${{ secrets.aws_account_id }}:role/TurnipReactInfraStack-CDKGithubActionRoleB8896D7A-fc37CpSiGtnC
           aws-region: us-west-2
 
       - name: cdk diff
