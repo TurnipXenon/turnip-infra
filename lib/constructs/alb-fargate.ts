@@ -71,10 +71,9 @@ export class AlbFargate extends Construct {
 
         this.cluster = new ecs.Cluster(this, `${id}-ecsCluster`, {vpc: this.vpc});
 
-        // todo: also move from porkbun to r53 as authortitative
         this.loadBalancedFargateService = new ecsPatterns.ApplicationLoadBalancedFargateService(this, `${id}-service`, {
             cluster: this.cluster,
-            memoryLimitMiB: 2048,
+            memoryLimitMiB: 1024,
             desiredCount: 1,
             cpu: 512,
             taskImageOptions: {
