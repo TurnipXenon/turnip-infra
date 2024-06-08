@@ -50,28 +50,28 @@ export class AlbFargate extends Construct {
         });
 
         // access ECR
-        this.vpc.addInterfaceEndpoint('ECRVPCEndpoint', {
+        this.vpc.addInterfaceEndpoint(`${id}-ECRVPCEndpoint`, {
             service: ec2.InterfaceVpcEndpointAwsService.ECR,
             privateDnsEnabled: true
         });
-        this.vpc.addInterfaceEndpoint('ECRDockerVpcEndpoint', {
+        this.vpc.addInterfaceEndpoint(`${id}-ECRDockerVpcEndpoint`, {
             service: ec2.InterfaceVpcEndpointAwsService.ECR_DOCKER,
             privateDnsEnabled: true
         });
-        this.vpc.addGatewayEndpoint('S3GatewayEndpoint', {
+        this.vpc.addGatewayEndpoint(`${id}-S3GatewayEndpoint`, {
             service: ec2.GatewayVpcEndpointAwsService.S3,
             subnets: [{subnetType: ec2.SubnetType.PRIVATE_ISOLATED}]
         });
 
         // access cloudwatch
-        this.vpc.addInterfaceEndpoint('CloudwatchLogsVPCEndpoint', {
+        this.vpc.addInterfaceEndpoint(`${id}-CloudwatchLogsVPCEndpoint`, {
             service: ec2.InterfaceVpcEndpointAwsService.CLOUDWATCH_LOGS,
             privateDnsEnabled: true
         });
 
         this.cluster = new ecs.Cluster(this, `${id}-ecsCluster`, {vpc: this.vpc});
 
-        this.loadBalancedFargateService = new ecsPatterns.ApplicationLoadBalancedFargateService(this, `${id}-service`, {
+        this.loadBalancedFargateService = new ecsPatterns.ApplicationLoadBalancedFargateService(this, `${id}-Service`, {
             cluster: this.cluster,
             memoryLimitMiB: 1024,
             desiredCount: 1,
