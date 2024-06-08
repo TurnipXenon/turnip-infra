@@ -116,8 +116,8 @@ export class TurnipReactInfraStack extends cdk.Stack {
         const lambdaUrl = this.deployerLambda.addFunctionUrl({
             authType: lambda.FunctionUrlAuthType.AWS_IAM
         });
-
         lambdaUrl.grantInvokeUrl(logicGithubActionRole);
+        this.deployerLambda.grantInvoke(logicGithubActionRole);
 
         // reference: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/security_iam_id-based-policy-examples.html#IAM_update_service_policies
         const deployerLambdaPolicy = new aws_iam.PolicyStatement();
