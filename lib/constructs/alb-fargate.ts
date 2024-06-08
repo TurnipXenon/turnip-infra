@@ -6,11 +6,16 @@ import {aws_ecs_patterns as ecsPatterns} from "aws-cdk-lib";
 import {IRepository} from "aws-cdk-lib/aws-ecr";
 import {ApplicationLoadBalancedFargateService} from "aws-cdk-lib/aws-ecs-patterns";
 import {IRole} from "aws-cdk-lib/aws-iam";
+import {HostedZone} from "aws-cdk-lib/aws-route53";
+import {Certificate} from "aws-cdk-lib/aws-certificatemanager";
 
 export interface AlbFargateProps {
     repository: IRepository,
     // role to allow the fargate service to pull from ECR
     taskExecutionRole: IRole,
+    hostedZone: HostedZone,
+    domain: string,
+    certificate: Certificate;
 }
 
 export class AlbFargate extends Construct {
@@ -66,10 +71,9 @@ export class AlbFargate extends Construct {
 
         this.cluster = new ecs.Cluster(this, `${id}-ecsCluster`, {vpc: this.vpc});
 
-        // todo: also move from porkbun to r53 as authortitative
         this.loadBalancedFargateService = new ecsPatterns.ApplicationLoadBalancedFargateService(this, `${id}-service`, {
             cluster: this.cluster,
-            memoryLimitMiB: 2048,
+            memoryLimitMiB: 1024,
             desiredCount: 1,
             cpu: 512,
             taskImageOptions: {
@@ -80,12 +84,15 @@ export class AlbFargate extends Construct {
             },
             loadBalancerName: `${id}-lb`,
             publicLoadBalancer: true,
+            domainZone: props.hostedZone,
+            domainName: props.domain,
+            certificate: props.certificate
         });
 
         // to scale down, set both min and max capacity to 0
         this.loadBalancedFargateService.service.autoScaleTaskCount({
             minCapacity: 0,
-            maxCapacity: 0
-        })
+            maxCapacity: 2
+        });
     }
 }

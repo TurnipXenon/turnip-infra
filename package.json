@@ -25,6 +25,7 @@
     "typescript": "~5.4.5"
   },
   "dependencies": {
+    "@aws-sdk/client-ecs": "^3.592.0",
     "aws-cdk-lib": "2.142.1",
     "constructs": "^10.0.0",
     "source-map-support": "^0.5.21"
