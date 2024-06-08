@@ -47,6 +47,7 @@ export class TurnipReactInfraStack extends cdk.Stack {
             domain: 'react.turnipxenon.com',
             logicGithubActionRole,
             doesRepositoryHaveAnImage: true,
+            certAlreadyCreated: true
         });
 
         new ServiceStack(this, `${serviceName}Staging`, {
@@ -54,6 +55,7 @@ export class TurnipReactInfraStack extends cdk.Stack {
             domain: 'staging.react.turnipxenon.com',
             logicGithubActionRole,
             doesRepositoryHaveAnImage: true,
+            certAlreadyCreated: true
         });
     }
 }

@@ -13,9 +13,9 @@ export interface AlbFargateProps {
     repository: IRepository,
     // role to allow the fargate service to pull from ECR
     taskExecutionRole: IRole,
-    hostedZone: HostedZone,
+    hostedZone?: HostedZone,
     domain: string,
-    certificate: Certificate;
+    certificate?: Certificate;
 }
 
 export class AlbFargate extends Construct {
@@ -85,13 +85,13 @@ export class AlbFargate extends Construct {
             loadBalancerName: `${id}-lb`,
             publicLoadBalancer: true,
             domainZone: props.hostedZone,
-            domainName: props.domain,
+            domainName: props.hostedZone ? props.domain : undefined,
             certificate: props.certificate
         });
 
         // to scale down, set both min and max capacity to 0
         this.loadBalancedFargateService.service.autoScaleTaskCount({
-            minCapacity: 0,
+            minCapacity: 1,
             maxCapacity: 2
         });
     }

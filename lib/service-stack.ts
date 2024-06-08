@@ -10,11 +10,14 @@ export interface ServiceStackProps extends cdk.StackProps {
     domain: string;
     logicGithubActionRole: GithubActionsRole;
     doesRepositoryHaveAnImage: boolean;
+    certAlreadyCreated: boolean;
 }
 
 /**
- * Prereq: deploy with doesRepositoryHaveAnImage = false
- * Afterwards, add an image for said repository so certificate can be made
+ * Prereq: deploy with doesRepositoryHaveAnImage = certAlreadyCreated = false
+ * Afterwards, add an image for said repository so certificate can be made, then set
+ * doesRepositoryHaveAnImage = true. Then deploy again.
+ * Afterwards, set certAlreadyCreated = true.
  */
 export class ServiceStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props: ServiceStackProps) {
@@ -26,15 +29,17 @@ export class ServiceStack extends cdk.Stack {
             return;
         }
 
-        const hostedZone = new aws_route53.PublicHostedZone(this, `${id}-HostedZone`, {
-            zoneName: props.domain,
-        });
+        const hostedZone = props.certAlreadyCreated
+            ? new aws_route53.PublicHostedZone(this, `${id}-HostedZone`, {
+                zoneName: props.domain,
+            }) : undefined;
 
         // https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_certificatemanager.Certificate.html#example
-        const certificate = new acm.Certificate(this, `${id}-Certificate`, {
-            domainName: props.domain,
-            validation: acm.CertificateValidation.fromDns(hostedZone),
-        });
+        const certificate = props.certAlreadyCreated
+            ? new acm.Certificate(this, `${id}-Certificate`, {
+                domainName: props.domain,
+                validation: acm.CertificateValidation.fromDns(hostedZone),
+            }) : undefined;
 
 
         const taskExecutionRole = new Role(this, `${id}-ECSFargateExecutionRole`, {
