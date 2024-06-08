@@ -43,11 +43,10 @@ export class ServiceStack extends cdk.Stack {
         repository.grantRead(taskExecutionRole);
         repository.grantPull(taskExecutionRole);
         repository.grantPush(props.logicGithubActionRole);
-
         // todo https://www.reddit.com/r/aws/comments/11g98us/aws_noob_cdkarchitecture_question_for_node_backend/
         // todo: also move from porkbun to r53 as authortitative
         // to be used for all ECS Fargate services to connect with a repository in ECR
-        const loadBalancedFargateService = new AlbFargate(this, id, {
+        const loadBalancedFargateService = new AlbFargate(this, `${id}-ALBService`, {
             repository,
             taskExecutionRole: taskExecutionRole,
             hostedZone: hostedZone,
@@ -58,7 +57,7 @@ export class ServiceStack extends cdk.Stack {
         const cluster = loadBalancedFargateService.cluster;
         const service = loadBalancedFargateService.loadBalancedFargateService.service;
 
-        const deployerLambda = new lambda.Function(this, "DeployerLambda", {
+        const deployerLambda = new lambda.Function(this, `${id}-DeployerLambda`, {
             runtime: lambda.Runtime.NODEJS_LATEST,
             handler: 'index.handler',
             code: lambda.Code.fromAsset("./lib/lambda/deploy-ecs"),
