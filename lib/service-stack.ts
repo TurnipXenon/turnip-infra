@@ -9,15 +9,14 @@ import {DeployerLambdaPolicyActions} from "./consts";
 export interface ServiceStackProps extends cdk.StackProps {
     domain: string;
     logicGithubActionRole: GithubActionsRole;
-    doesRepositoryHaveAnImage: boolean;
-    certAlreadyCreated: boolean;
+    certificate?: acm.ICertificate;
 }
 
 /**
  * Prereq: deploy with doesRepositoryHaveAnImage = certAlreadyCreated = false
  * Afterwards, add an image for said repository so certificate can be made, then set
- * doesRepositoryHaveAnImage = true. Then deploy again.
- * Afterwards, set certAlreadyCreated = true.
+ * albFargateAlreadyCreated = true. Then deploy again.
+ * Afterwards, set hostZoneAlreadyCreated = true.
  */
 export class ServiceStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props: ServiceStackProps) {
@@ -25,22 +24,9 @@ export class ServiceStack extends cdk.Stack {
 
         const repository = new aws_ecr.Repository(this, `${id}-Repository`);
 
-        if (!props.doesRepositoryHaveAnImage) {
-            return;
-        }
-
-        const hostedZone = props.certAlreadyCreated
-            ? new aws_route53.PublicHostedZone(this, `${id}-HostedZone`, {
-                zoneName: props.domain,
-            }) : undefined;
-
-        // https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_certificatemanager.Certificate.html#example
-        const certificate = props.certAlreadyCreated
-            ? new acm.Certificate(this, `${id}-Certificate`, {
-                domainName: props.domain,
-                validation: acm.CertificateValidation.fromDns(hostedZone),
-            }) : undefined;
-
+        const hostedZone = new aws_route53.PublicHostedZone(this, `${id}-HostedZone`, {
+            zoneName: props.domain,
+        });
 
         const taskExecutionRole = new Role(this, `${id}-ECSFargateExecutionRole`, {
             assumedBy: new ServicePrincipal("ecs-tasks.amazonaws.com")
@@ -56,7 +42,7 @@ export class ServiceStack extends cdk.Stack {
             taskExecutionRole: taskExecutionRole,
             hostedZone: hostedZone,
             domain: props.domain,
-            certificate: certificate
+            certificate: props.certificate
         });
 
         const cluster = loadBalancedFargateService.cluster;

@@ -1,13 +1,13 @@
 import {Construct} from "constructs";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
 import * as ecs from "aws-cdk-lib/aws-ecs";
-import {Cluster, FargateTaskDefinition} from "aws-cdk-lib/aws-ecs";
+import {Cluster} from "aws-cdk-lib/aws-ecs";
 import {aws_ecs_patterns as ecsPatterns} from "aws-cdk-lib";
 import {IRepository} from "aws-cdk-lib/aws-ecr";
 import {ApplicationLoadBalancedFargateService} from "aws-cdk-lib/aws-ecs-patterns";
 import {IRole} from "aws-cdk-lib/aws-iam";
 import {HostedZone} from "aws-cdk-lib/aws-route53";
-import {Certificate} from "aws-cdk-lib/aws-certificatemanager";
+import {ICertificate} from "aws-cdk-lib/aws-certificatemanager";
 
 export interface AlbFargateProps {
     repository: IRepository,
@@ -15,7 +15,7 @@ export interface AlbFargateProps {
     taskExecutionRole: IRole,
     hostedZone?: HostedZone,
     domain: string,
-    certificate?: Certificate;
+    certificate?: ICertificate;
 }
 
 export class AlbFargate extends Construct {
