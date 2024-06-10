@@ -16,6 +16,7 @@ export interface AlbFargateProps {
     hostedZone?: HostedZone,
     domain: string,
     certificate?: ICertificate;
+    environment?: { [p: string]: string } | undefined;
 }
 
 export class AlbFargate extends Construct {
@@ -87,6 +88,7 @@ export class AlbFargate extends Construct {
                 containerPort: 3000,
                 taskRole: props.taskExecutionRole,
                 executionRole: props.taskExecutionRole,
+                environment: props.environment
             },
             loadBalancerName: `${id}-lb`,
             publicLoadBalancer: true,

@@ -2,14 +2,16 @@ import * as cdk from 'aws-cdk-lib';
 import {aws_certificatemanager as acm, aws_ecr, aws_iam, aws_lambda as lambda, aws_route53} from 'aws-cdk-lib';
 import {Construct} from 'constructs';
 import {GithubActionsRole} from "aws-cdk-github-oidc";
-import {AlbFargate} from "./constructs/alb-fargate";
+import {AlbFargate} from "../constructs/alb-fargate";
 import {Role, ServicePrincipal} from "aws-cdk-lib/aws-iam";
-import {DeployerLambdaPolicyActions} from "./consts";
+import {DeployerLambdaPolicyActions} from "../consts";
+import {CognitoConstruct} from "./cognito-construct";
 
 export interface ServiceStackProps extends cdk.StackProps {
     domain: string;
     logicGithubActionRole: GithubActionsRole;
     certificate?: acm.ICertificate;
+    cognitoConstruct?: CognitoConstruct;
 }
 
 /**
@@ -42,7 +44,10 @@ export class ServiceStack extends cdk.Stack {
             taskExecutionRole: taskExecutionRole,
             hostedZone: hostedZone,
             domain: props.domain,
-            certificate: props.certificate
+            certificate: props.certificate,
+            environment: {
+                COGNITO_APP_CLIENT_ID: props.cognitoConstruct?.clientId ?? ""
+            }
         });
 
         const cluster = loadBalancedFargateService.cluster;
@@ -64,6 +69,15 @@ export class ServiceStack extends cdk.Stack {
         deployerLambdaPolicy.addResources(service.serviceArn);
         deployerLambdaPolicy.addActions(...DeployerLambdaPolicyActions);
         deployerLambda.addToRolePolicy(deployerLambdaPolicy);
+
+        if (props.certificate) {
+            props.cognitoConstruct?.cognito.addDomain(`${id}-CognitoDomain`, {
+                customDomain: {
+                    domainName: props.domain,
+                    certificate: props.certificate
+                }
+            });
+        }
 
         // todo: albfarate target group configure health check
     }
