@@ -57,11 +57,6 @@ export class ServiceStack extends cdk.Stack {
                 SERVICE_ARN: service.serviceName,
             },
         });
-
-        const lambdaUrl = deployerLambda.addFunctionUrl({
-            authType: lambda.FunctionUrlAuthType.AWS_IAM
-        });
-        lambdaUrl.grantInvokeUrl(props.logicGithubActionRole);
         deployerLambda.grantInvoke(props.logicGithubActionRole);
 
         // reference: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/security_iam_id-based-policy-examples.html#IAM_update_service_policies

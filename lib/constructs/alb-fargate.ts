@@ -76,6 +76,12 @@ export class AlbFargate extends Construct {
             memoryLimitMiB: 1024,
             desiredCount: 1,
             cpu: 512,
+            capacityProviderStrategies: [
+                {
+                    capacityProvider: 'FARGATE_SPOT',
+                    weight: 1,
+                },
+            ],
             taskImageOptions: {
                 image: ecs.ContainerImage.fromEcrRepository(props.repository, "latest"),
                 containerPort: 3000,

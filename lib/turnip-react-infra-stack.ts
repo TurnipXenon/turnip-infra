@@ -34,12 +34,6 @@ export class TurnipReactInfraStack extends cdk.Stack {
         // endregion Github Actions
 
         // https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_route53-readme.html#amazon-route53-construct-library
-        const domain = 'turnipxenon.com';
-        const apexZone = new aws_route53.PublicHostedZone(this, 'TurnipXenonHostedZone', {
-            zoneName: domain,
-        });
-        apexZone.applyRemovalPolicy(RemovalPolicy.RETAIN);
-
         const serviceName = "TurnipReact";
         const certificate = acm.Certificate.fromCertificateArn(
             this,
