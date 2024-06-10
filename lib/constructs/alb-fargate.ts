@@ -1,21 +1,21 @@
 import {Construct} from "constructs";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
 import * as ecs from "aws-cdk-lib/aws-ecs";
-import {Cluster, FargateTaskDefinition} from "aws-cdk-lib/aws-ecs";
+import {Cluster} from "aws-cdk-lib/aws-ecs";
 import {aws_ecs_patterns as ecsPatterns} from "aws-cdk-lib";
 import {IRepository} from "aws-cdk-lib/aws-ecr";
 import {ApplicationLoadBalancedFargateService} from "aws-cdk-lib/aws-ecs-patterns";
 import {IRole} from "aws-cdk-lib/aws-iam";
 import {HostedZone} from "aws-cdk-lib/aws-route53";
-import {Certificate} from "aws-cdk-lib/aws-certificatemanager";
+import {ICertificate} from "aws-cdk-lib/aws-certificatemanager";
 
 export interface AlbFargateProps {
     repository: IRepository,
     // role to allow the fargate service to pull from ECR
     taskExecutionRole: IRole,
-    hostedZone: HostedZone,
+    hostedZone?: HostedZone,
     domain: string,
-    certificate: Certificate;
+    certificate?: ICertificate;
 }
 
 export class AlbFargate extends Construct {
@@ -50,32 +50,38 @@ export class AlbFargate extends Construct {
         });
 
         // access ECR
-        this.vpc.addInterfaceEndpoint('ECRVPCEndpoint', {
+        this.vpc.addInterfaceEndpoint(`${id}-ECRVPCEndpoint`, {
             service: ec2.InterfaceVpcEndpointAwsService.ECR,
             privateDnsEnabled: true
         });
-        this.vpc.addInterfaceEndpoint('ECRDockerVpcEndpoint', {
+        this.vpc.addInterfaceEndpoint(`${id}-ECRDockerVpcEndpoint`, {
             service: ec2.InterfaceVpcEndpointAwsService.ECR_DOCKER,
             privateDnsEnabled: true
         });
-        this.vpc.addGatewayEndpoint('S3GatewayEndpoint', {
+        this.vpc.addGatewayEndpoint(`${id}-S3GatewayEndpoint`, {
             service: ec2.GatewayVpcEndpointAwsService.S3,
             subnets: [{subnetType: ec2.SubnetType.PRIVATE_ISOLATED}]
         });
 
         // access cloudwatch
-        this.vpc.addInterfaceEndpoint('CloudwatchLogsVPCEndpoint', {
+        this.vpc.addInterfaceEndpoint(`${id}-CloudwatchLogsVPCEndpoint`, {
             service: ec2.InterfaceVpcEndpointAwsService.CLOUDWATCH_LOGS,
             privateDnsEnabled: true
         });
 
         this.cluster = new ecs.Cluster(this, `${id}-ecsCluster`, {vpc: this.vpc});
 
-        this.loadBalancedFargateService = new ecsPatterns.ApplicationLoadBalancedFargateService(this, `${id}-service`, {
+        this.loadBalancedFargateService = new ecsPatterns.ApplicationLoadBalancedFargateService(this, `${id}-Service`, {
             cluster: this.cluster,
             memoryLimitMiB: 1024,
             desiredCount: 1,
             cpu: 512,
+            capacityProviderStrategies: [
+                {
+                    capacityProvider: 'FARGATE_SPOT',
+                    weight: 1,
+                },
+            ],
             taskImageOptions: {
                 image: ecs.ContainerImage.fromEcrRepository(props.repository, "latest"),
                 containerPort: 3000,
@@ -85,13 +91,13 @@ export class AlbFargate extends Construct {
             loadBalancerName: `${id}-lb`,
             publicLoadBalancer: true,
             domainZone: props.hostedZone,
-            domainName: props.domain,
+            domainName: props.hostedZone ? props.domain : undefined,
             certificate: props.certificate
         });
 
         // to scale down, set both min and max capacity to 0
         this.loadBalancedFargateService.service.autoScaleTaskCount({
-            minCapacity: 0,
+            minCapacity: 1,
             maxCapacity: 2
         });
     }
