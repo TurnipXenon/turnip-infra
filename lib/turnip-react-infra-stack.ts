@@ -3,7 +3,7 @@ import {aws_certificatemanager as acm, aws_route53, RemovalPolicy} from 'aws-cdk
 import {Construct} from 'constructs';
 import {GithubActionsIdentityProvider, GithubActionsRole} from "aws-cdk-github-oidc";
 import {ServiceStack} from "./stacks/service-stack";
-import {CognitoConstruct} from "./stacks/cognito-construct";
+import {CognitoStack} from "./stacks/cognito-stack";
 
 export class TurnipReactInfraStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -42,14 +42,14 @@ export class TurnipReactInfraStack extends cdk.Stack {
             "arn:aws:acm:us-west-2:761736783364:certificate/633942e8-4245-4e10-9bb7-dbcf80e728a3"
         );
 
-        const cognitoConstruct = new CognitoConstruct(this, 'TurnipReact', {});
+        const cognitoConstruct = new CognitoStack(this, 'TurnipReact', {});
 
         new ServiceStack(this, `${serviceName}Prod`, {
             ...props,
             domain: 'react.turnipxenon.com',
             logicGithubActionRole,
             certificate,
-            cognitoConstruct,
+            cognitoStack: cognitoConstruct,
         });
 
         new ServiceStack(this, `${serviceName}Staging`, {
@@ -57,7 +57,7 @@ export class TurnipReactInfraStack extends cdk.Stack {
             domain: 'staging-react.turnipxenon.com',
             logicGithubActionRole,
             certificate,
-            cognitoConstruct,
+            cognitoStack: cognitoConstruct,
         });
     }
 }

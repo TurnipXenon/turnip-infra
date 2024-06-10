@@ -5,13 +5,13 @@ import {GithubActionsRole} from "aws-cdk-github-oidc";
 import {AlbFargate} from "../constructs/alb-fargate";
 import {Role, ServicePrincipal} from "aws-cdk-lib/aws-iam";
 import {DeployerLambdaPolicyActions} from "../consts";
-import {CognitoConstruct} from "./cognito-construct";
+import {CognitoStack} from "./cognito-stack";
 
 export interface ServiceStackProps extends cdk.StackProps {
     domain: string;
     logicGithubActionRole: GithubActionsRole;
     certificate?: acm.ICertificate;
-    cognitoConstruct?: CognitoConstruct;
+    cognitoStack?: CognitoStack;
 }
 
 /**
@@ -46,7 +46,7 @@ export class ServiceStack extends cdk.Stack {
             domain: props.domain,
             certificate: props.certificate,
             environment: {
-                COGNITO_APP_CLIENT_ID: props.cognitoConstruct?.clientId ?? ""
+                COGNITO_APP_CLIENT_ID: props.cognitoStack?.clientId ?? ""
             }
         });
 
@@ -71,7 +71,7 @@ export class ServiceStack extends cdk.Stack {
         deployerLambda.addToRolePolicy(deployerLambdaPolicy);
 
         if (props.certificate) {
-            props.cognitoConstruct?.cognito.addDomain(`${id}-CognitoDomain`, {
+            props.cognitoStack?.cognito.addDomain(`${id}-CognitoDomain`, {
                 customDomain: {
                     domainName: props.domain,
                     certificate: props.certificate

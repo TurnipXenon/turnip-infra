@@ -1,18 +1,19 @@
 import {aws_cognito as cognito} from 'aws-cdk-lib';
 import {Construct} from 'constructs';
 import {UserPool, UserPoolClient} from "aws-cdk-lib/aws-cognito";
+import * as cdk from "aws-cdk-lib";
 
-export interface CognitoConstructProps {
+export interface CognitoConstructProps extends cdk.StackProps {
 }
 
-export class CognitoConstruct extends Construct {
+export class CognitoStack extends cdk.Stack {
     public readonly cognito: UserPool;
     public readonly appClient: UserPoolClient;
     // reference code: https://github.com/awsdocs/aws-doc-sdk-examples/blob/main/javascriptv3/example_code/cognito-identity-provider/scenarios/cognito-developer-guide-react-example/frontend-client/src/authService.ts
     // pass this to our apps to enable them to login
     public readonly clientId: string;
 
-    constructor(scope: Construct, id: string, props: CognitoConstructProps) {
+    constructor(scope: Construct, id: string, _: CognitoConstructProps) {
         super(scope, id);
 
         this.cognito = new cognito.UserPool(this, `${id}-Cognito`, {
