@@ -30,6 +30,7 @@ export class AlbFargate extends Construct {
         // reference: https://stackoverflow.com/a/76033850/17836168
         this.vpc = new ec2.Vpc(this, `${id}-vpc`, {
             maxAzs: 2,
+            natGateways: 0,
             subnetConfiguration: [
                 {
                     cidrMask: 24,
@@ -49,6 +50,12 @@ export class AlbFargate extends Construct {
             ]
         });
 
+
+        this.vpc.addGatewayEndpoint(`${id}-S3GatewayEndpoint`, {
+            service: ec2.GatewayVpcEndpointAwsService.S3,
+            subnets: [{subnetType: ec2.SubnetType.PRIVATE_ISOLATED}]
+        });
+
         // access ECR
         this.vpc.addInterfaceEndpoint(`${id}-ECRVPCEndpoint`, {
             service: ec2.InterfaceVpcEndpointAwsService.ECR,
@@ -56,6 +63,10 @@ export class AlbFargate extends Construct {
         });
         this.vpc.addInterfaceEndpoint(`${id}-ECRDockerVpcEndpoint`, {
             service: ec2.InterfaceVpcEndpointAwsService.ECR_DOCKER,
+            privateDnsEnabled: true
+        });
+        this.vpc.addInterfaceEndpoint(`${id}-SecretsManagerEndpoint`, {
+            service: ec2.InterfaceVpcEndpointAwsService.SECRETS_MANAGER,
             privateDnsEnabled: true
         });
         this.vpc.addInterfaceEndpoint(`${id}-SSMMessagesEndpoint`, {
@@ -66,12 +77,6 @@ export class AlbFargate extends Construct {
             service: ec2.InterfaceVpcEndpointAwsService.SSM,
             privateDnsEnabled: true
         });
-        this.vpc.addGatewayEndpoint(`${id}-S3GatewayEndpoint`, {
-            service: ec2.GatewayVpcEndpointAwsService.S3,
-            subnets: [{subnetType: ec2.SubnetType.PRIVATE_ISOLATED}]
-        });
-
-        // access cloudwatch
         this.vpc.addInterfaceEndpoint(`${id}-CloudwatchLogsVPCEndpoint`, {
             service: ec2.InterfaceVpcEndpointAwsService.CLOUDWATCH_LOGS,
             privateDnsEnabled: true
