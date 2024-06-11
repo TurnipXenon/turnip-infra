@@ -44,17 +44,17 @@ export class TurnipReactInfraStack extends cdk.Stack {
 
         const cognitoConstruct = new CognitoStack(this, 'TurnipReact', {});
 
-        new ServiceStack(this, `${serviceName}Prod`, {
+        new ServiceStack(this, `${serviceName}Staging`, {
             ...props,
-            domain: 'react.turnipxenon.com',
+            domain: 'staging-react.turnipxenon.com',
             logicGithubActionRole,
             certificate,
             cognitoStack: cognitoConstruct,
         });
 
-        new ServiceStack(this, `${serviceName}Staging`, {
+        new ServiceStack(this, `${serviceName}Prod`, {
             ...props,
-            domain: 'staging-react.turnipxenon.com',
+            domain: 'react.turnipxenon.com',
             logicGithubActionRole,
             certificate,
             cognitoStack: cognitoConstruct,

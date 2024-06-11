@@ -30,7 +30,6 @@ export class AlbFargate extends Construct {
         // reference: https://stackoverflow.com/a/76033850/17836168
         this.vpc = new ec2.Vpc(this, `${id}-vpc`, {
             maxAzs: 2,
-            natGateways: 1,
             subnetConfiguration: [
                 {
                     cidrMask: 24,
@@ -57,6 +56,14 @@ export class AlbFargate extends Construct {
         });
         this.vpc.addInterfaceEndpoint(`${id}-ECRDockerVpcEndpoint`, {
             service: ec2.InterfaceVpcEndpointAwsService.ECR_DOCKER,
+            privateDnsEnabled: true
+        });
+        this.vpc.addInterfaceEndpoint(`${id}-SSMMessagesEndpoint`, {
+            service: ec2.InterfaceVpcEndpointAwsService.SSM_MESSAGES,
+            privateDnsEnabled: true
+        });
+        this.vpc.addInterfaceEndpoint(`${id}-SSMEndpoint`, {
+            service: ec2.InterfaceVpcEndpointAwsService.SSM,
             privateDnsEnabled: true
         });
         this.vpc.addGatewayEndpoint(`${id}-S3GatewayEndpoint`, {
