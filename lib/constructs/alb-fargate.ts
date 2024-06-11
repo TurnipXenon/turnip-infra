@@ -53,7 +53,7 @@ export class AlbFargate extends Construct {
 
         this.vpc.addGatewayEndpoint(`${id}-S3GatewayEndpoint`, {
             service: ec2.GatewayVpcEndpointAwsService.S3,
-            subnets: [{subnetType: ec2.SubnetType.PRIVATE_ISOLATED}]
+            subnets: [{subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS}]
         });
 
         // access ECR
@@ -100,7 +100,7 @@ export class AlbFargate extends Construct {
                 containerPort: 3000,
                 taskRole: props.taskExecutionRole,
                 executionRole: props.taskExecutionRole,
-                environment: props.environment
+                environment: props.environment,
             },
             loadBalancerName: `${id}-lb`,
             publicLoadBalancer: true,
