@@ -1,5 +1,7 @@
 # Turnip React Infra
 
+**We are retiring this because this is just too costly to what seems like non-existent work.** I could always deploy it when I think I'm ready to set it up again.
+
 Infrastructure definition for Turnip React.
 
 ## Useful commands

@@ -16,6 +16,7 @@ export interface AlbFargateProps {
     hostedZone?: HostedZone,
     domain: string,
     certificate?: ICertificate;
+    environment?: { [p: string]: string } | undefined;
 }
 
 export class AlbFargate extends Construct {
@@ -29,7 +30,7 @@ export class AlbFargate extends Construct {
         // reference: https://stackoverflow.com/a/76033850/17836168
         this.vpc = new ec2.Vpc(this, `${id}-vpc`, {
             maxAzs: 2,
-            natGateways: 1,
+            natGateways: 0,
             subnetConfiguration: [
                 {
                     cidrMask: 24,
@@ -49,6 +50,12 @@ export class AlbFargate extends Construct {
             ]
         });
 
+
+        this.vpc.addGatewayEndpoint(`${id}-S3GatewayEndpoint`, {
+            service: ec2.GatewayVpcEndpointAwsService.S3,
+            subnets: [{subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS}]
+        });
+
         // access ECR
         this.vpc.addInterfaceEndpoint(`${id}-ECRVPCEndpoint`, {
             service: ec2.InterfaceVpcEndpointAwsService.ECR,
@@ -58,12 +65,18 @@ export class AlbFargate extends Construct {
             service: ec2.InterfaceVpcEndpointAwsService.ECR_DOCKER,
             privateDnsEnabled: true
         });
-        this.vpc.addGatewayEndpoint(`${id}-S3GatewayEndpoint`, {
-            service: ec2.GatewayVpcEndpointAwsService.S3,
-            subnets: [{subnetType: ec2.SubnetType.PRIVATE_ISOLATED}]
+        this.vpc.addInterfaceEndpoint(`${id}-SecretsManagerEndpoint`, {
+            service: ec2.InterfaceVpcEndpointAwsService.SECRETS_MANAGER,
+            privateDnsEnabled: true
         });
-
-        // access cloudwatch
+        this.vpc.addInterfaceEndpoint(`${id}-SSMMessagesEndpoint`, {
+            service: ec2.InterfaceVpcEndpointAwsService.SSM_MESSAGES,
+            privateDnsEnabled: true
+        });
+        this.vpc.addInterfaceEndpoint(`${id}-SSMEndpoint`, {
+            service: ec2.InterfaceVpcEndpointAwsService.SSM,
+            privateDnsEnabled: true
+        });
         this.vpc.addInterfaceEndpoint(`${id}-CloudwatchLogsVPCEndpoint`, {
             service: ec2.InterfaceVpcEndpointAwsService.CLOUDWATCH_LOGS,
             privateDnsEnabled: true
@@ -87,6 +100,7 @@ export class AlbFargate extends Construct {
                 containerPort: 3000,
                 taskRole: props.taskExecutionRole,
                 executionRole: props.taskExecutionRole,
+                environment: props.environment,
             },
             loadBalancerName: `${id}-lb`,
             publicLoadBalancer: true,

@@ -1,10 +1,11 @@
 import * as cdk from 'aws-cdk-lib';
-import {aws_certificatemanager as acm, aws_route53, RemovalPolicy} from 'aws-cdk-lib';
+import {aws_certificatemanager as acm} from 'aws-cdk-lib';
 import {Construct} from 'constructs';
 import {GithubActionsIdentityProvider, GithubActionsRole} from "aws-cdk-github-oidc";
-import {ServiceStack} from "./service-stack";
+import {ServiceStack} from "./stacks/service-stack";
+import {CognitoStack} from "./stacks/cognito-stack";
 
-export class TurnipReactInfraStack extends cdk.Stack {
+export class TurnipInfraStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
         if (!props) {
             props = {
@@ -41,18 +42,22 @@ export class TurnipReactInfraStack extends cdk.Stack {
             "arn:aws:acm:us-west-2:761736783364:certificate/633942e8-4245-4e10-9bb7-dbcf80e728a3"
         );
 
-        new ServiceStack(this, `${serviceName}Prod`, {
-            ...props,
-            domain: 'react.turnipxenon.com',
-            logicGithubActionRole,
-            certificate
-        });
+        const cognitoConstruct = new CognitoStack(this, 'TurnipReact', {});
 
         new ServiceStack(this, `${serviceName}Staging`, {
             ...props,
             domain: 'staging-react.turnipxenon.com',
             logicGithubActionRole,
-            certificate
+            certificate,
+            cognitoStack: cognitoConstruct,
+        });
+
+        new ServiceStack(this, `${serviceName}Prod`, {
+            ...props,
+            domain: 'react.turnipxenon.com',
+            logicGithubActionRole,
+            certificate,
+            cognitoStack: cognitoConstruct,
         });
     }
 }
