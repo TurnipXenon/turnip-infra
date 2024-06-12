@@ -1,8 +1,8 @@
 {
-  "name": "turnip-react-infra",
+  "name": "turnip-infra",
   "version": "0.1.0",
   "bin": {
-    "turnip-react-infra": "bin/turnip-react-infra.js"
+    "turnip-infra": "bin/turnip-infra.js"
   },
   "scripts": {
     "build": "tsc",
