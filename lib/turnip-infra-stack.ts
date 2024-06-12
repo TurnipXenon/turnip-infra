@@ -1,8 +1,9 @@
 import * as cdk from 'aws-cdk-lib';
+import {aws_certificatemanager as acm} from 'aws-cdk-lib';
 import {Construct} from 'constructs';
 import {GithubActionsIdentityProvider, GithubActionsRole} from "aws-cdk-github-oidc";
-import * as ec2 from 'aws-cdk-lib/aws-ec2';
-import {SubnetType} from 'aws-cdk-lib/aws-ec2';
+import {ServiceStack} from "./stacks/service-stack";
+import {CognitoStack} from "./stacks/cognito-stack";
 
 export class TurnipInfraStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -21,6 +22,11 @@ export class TurnipInfraStack extends cdk.Stack {
         // https://aws.amazon.com/blogs/security/use-iam-roles-to-connect-github-actions-to-actions-in-aws/
         // https://constructs.dev/packages/aws-cdk-github-oidc/v/2.4.1?lang=typescript
         const provider = new GithubActionsIdentityProvider(this, "GithubProvider");
+        const infraGithubActionRole = new GithubActionsRole(this, "CDKGithubActionRole", {
+            provider: provider,
+            owner: "TurnipXenon",
+            repo: "turnip-react-infra",
+        });
         const logicGithubActionRole = new GithubActionsRole(this, "LogicGithubActionRole", {
             provider: provider,
             owner: "TurnipXenon",
@@ -28,39 +34,30 @@ export class TurnipInfraStack extends cdk.Stack {
         });
         // endregion Github Actions
 
-        // const cognitoConstruct = new CognitoStack(this, 'TurnipReact', {});
+        // https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_route53-readme.html#amazon-route53-construct-library
+        const serviceName = "TurnipReact";
+        const certificate = acm.Certificate.fromCertificateArn(
+            this,
+            "Porkbun certificate",
+            "arn:aws:acm:us-west-2:761736783364:certificate/633942e8-4245-4e10-9bb7-dbcf80e728a3"
+        );
 
-        const vpc = new ec2.Vpc(this, `TurnipVPC`, {
-            maxAzs: 1,
-            natGateways: 0,
-            subnetConfiguration: [
-                {
-                    cidrMask: 24,
-                    name: 'application',
-                    subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
-                },
-                {
-                    cidrMask: 24,
-                    name: 'ingress',
-                    subnetType: ec2.SubnetType.PUBLIC,
-                },
-                {
-                    cidrMask: 28,
-                    name: 'internal',
-                    subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
-                }
-            ]
+        const cognitoConstruct = new CognitoStack(this, 'TurnipReact', {});
+
+        new ServiceStack(this, `${serviceName}Staging`, {
+            ...props,
+            domain: 'staging-react.turnipxenon.com',
+            logicGithubActionRole,
+            certificate,
+            cognitoStack: cognitoConstruct,
         });
 
-        const keyPair = ec2.KeyPair.fromKeyPairName(this, 'KeyPair', 'TurnipPersonal');
-
-        const ec2Instance = new ec2.Instance(this, 'TurnipEC2InstanceProd', {
-            vpc,
-            vpcSubnets: {subnetType: SubnetType.PUBLIC},
-            instanceType: ec2.InstanceType.of(ec2.InstanceClass.T4G, ec2.InstanceSize.MICRO),
-            machineImage: ec2.MachineImage.latestAmazonLinux2023(),
-            associatePublicIpAddress: false,
-            keyPair
+        new ServiceStack(this, `${serviceName}Prod`, {
+            ...props,
+            domain: 'react.turnipxenon.com',
+            logicGithubActionRole,
+            certificate,
+            cognitoStack: cognitoConstruct,
         });
     }
 }
